@@ -67,5 +67,16 @@ npm start
 We designed a scoped system prompt that positions Gemini as a dedicated *civic assistant*, grounded in our local schemes database, with dynamic Hindi/English instructions based on user preference — ensuring accurate, concise, and language-appropriate responses for every citizen query.
 
 ## 👤 Built By
+## 🎯 Chosen Vertical
+
+*Civic Services & Governance* — We focused on helping citizens access government scheme information, understand document requirements, and interact with local civic bodies (issue reporting + complaint tracking), rather than a single-purpose tool. This vertical was chosen because it affects the largest number of citizens daily and has the most fragmented, hard-to-navigate information landscape — making it the best fit for a GenAI-powered simplification layer.
+
+## 📝 Assumptions Made
+
+- Complaint tracking uses in-memory mock data (resets on server restart) since no real municipal complaint API was available within the hackathon timeframe — the interface and logic are built to be a drop-in replacement once a real backend/database is connected.
+- Scheme data (PM Awas Yojana, Ayushman Bharat, Scholarships, Pension) is curated from publicly available government scheme information as of 2026 and simplified for citizen readability; exact eligibility criteria may vary by state and should be verified on official portals.
+- The AI chatbot is scoped to redirect off-topic queries back to civic/government topics, assuming the primary use case is civic assistance rather than general-purpose chat.
+- Hindi/English toggle covers the AI chatbot and schemes content; complaint/tracking form fields (name, location, category) are left in English as they are largely universal short-form inputs.
+
 
 Abhishek Yadav — for DEVENGERS PromptWars 2026
