@@ -205,7 +205,7 @@
       });
       const data = await res.json();
       if (!res.ok) {
-        resultDiv.innerHTML = <div class="text-red-600 text-sm">⚠️ ${data.error || "Could not submit."}</div>;
+        resultDiv.innerHTML = `<div class="text-red-600 text-sm">⚠️ ${data.error || "Could not submit."}</div>`;
         return;
       }
       resultDiv.innerHTML = `
