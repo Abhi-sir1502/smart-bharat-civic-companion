@@ -18,13 +18,11 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-  <!-- CONFIG: point to your backend URL -->
   <script>
     const API_BASE = "https://smart-bharat-civic-companion-o3u5.onrender.com";
     let currentLang = "en";
   </script>
 
-  <!-- Header -->
   <header class="bg-teal-700 text-white px-4 py-4 flex items-center justify-between shadow">
     <div class="flex items-center gap-2">
       <span class="text-2xl" aria-hidden="true">🇮🇳</span>
@@ -38,7 +36,6 @@
     </button>
   </header>
 
-  <!-- Tabs -->
   <nav aria-label="Main sections" class="flex overflow-x-auto bg-white border-b sticky top-0 z-10 shadow-sm">
     <button class="tab-btn tab-active px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="chat" aria-current="true">💬 AI Chat</button>
     <button class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="schemes">📄 Schemes</button>
@@ -48,7 +45,6 @@
 
   <main class="max-w-2xl mx-auto p-4">
 
-    <!-- CHAT TAB -->
     <section id="chat" class="tab-section" aria-labelledby="chatHeading">
       <h2 id="chatHeading" class="sr-only">AI Chat Assistant</h2>
       <div id="chatWindow" role="log" aria-live="polite" aria-label="Chat conversation" class="bg-white rounded-xl shadow p-4 h-96 overflow-y-auto flex flex-col gap-3 mb-3">
@@ -65,13 +61,11 @@
       </form>
     </section>
 
-    <!-- SCHEMES TAB -->
     <section id="schemes" class="tab-section hidden" aria-labelledby="schemesHeading">
       <h2 id="schemesHeading" class="font-semibold text-lg mb-3 text-gray-800">Government Schemes</h2>
       <div id="schemesList" class="grid gap-3" aria-live="polite"></div>
     </section>
 
-    <!-- COMPLAINT TAB -->
     <section id="complaint" class="tab-section hidden" aria-labelledby="complaintHeading">
       <h2 id="complaintHeading" class="font-semibold text-lg mb-3 text-gray-800">Report a Civic Issue</h2>
       <form id="complaintForm" class="bg-white rounded-xl shadow p-4 flex flex-col gap-3">
@@ -99,7 +93,6 @@
       <div id="complaintResult" class="mt-3" aria-live="polite"></div>
     </section>
 
-    <!-- TRACK TAB -->
     <section id="track" class="tab-section hidden" aria-labelledby="trackHeading">
       <h2 id="trackHeading" class="font-semibold text-lg mb-3 text-gray-800">Track Complaint Status</h2>
       <form id="trackForm" class="flex gap-2 mb-4">
@@ -113,7 +106,6 @@
   </main>
 
 <script>
-  // ---------- Tab switching ----------
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => {
@@ -128,14 +120,12 @@
     });
   });
 
-  // ---------- Language toggle ----------
   document.getElementById("langToggle").addEventListener("click", () => {
     currentLang = currentLang === "en" ? "hi" : "en";
     document.getElementById("langToggle").textContent = currentLang === "en" ? "🌐 English" : "🌐 हिंदी";
     if (!document.getElementById("schemes").classList.contains("hidden")) loadSchemes();
   });
 
-  // ---------- Chat ----------
   const chatWindow = document.getElementById("chatWindow");
   const chatInput = document.getElementById("chatInput");
   const chatForm = document.getElementById("chatForm");
@@ -177,7 +167,6 @@
     sendMessage();
   });
 
-  // ---------- Schemes ----------
   async function loadSchemes() {
     const list = document.getElementById("schemesList");
     list.innerHTML = "Loading...";
@@ -192,7 +181,7 @@
           <details class="text-sm">
             <summary class="cursor-pointer text-teal-700 font-medium">📄 Required Documents</summary>
             <ul class="list-disc ml-5 mt-1 text-gray-600">
-              ${s.documents.map(d => `<li>${d}</li>`).join("")}
+              ${s.documents.map(d => <li>${d}</li>).join("")}
             </ul>
           </details>
         </div>
@@ -202,7 +191,6 @@
     }
   }
 
-  // ---------- Complaint submit ----------
   document.getElementById("complaintForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -231,7 +219,6 @@
     }
   });
 
-  // ---------- Track complaint ----------
   document.getElementById("trackForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = document.getElementById("trackInput").value.trim();
