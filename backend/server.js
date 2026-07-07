@@ -2,13 +2,37 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import compression from "compression";
 import { schemes } from "./data/schemes.js";
 
 dotenv.config();
 
 const app = express();
+
+// ---------- Security & efficiency middleware ----------
+app.use(helmet());
+app.use(compression());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50kb" }));
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
+app.use(generalLimiter);
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many chat requests, please slow down." },
+});
 
 const PORT = process.env.PORT || 5000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -17,6 +41,16 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemi
 // ---------- In-memory mock complaint store ----------
 let complaints = [];
 let complaintCounter = 1000;
+
+// ---------- Input validation helpers ----------
+function isNonEmptyString(value, maxLen = 500) {
+  return typeof value === "string" && value.trim().length > 0 && value.length <= maxLen;
+}
+
+function sanitize(str) {
+  if (typeof str !== "string") return "";
+  return str.replace(/[<>]/g, "").trim().slice(0, 500);
+}
 
 // ---------- Schemes ----------
 app.get("/api/schemes", (req, res) => {
@@ -31,19 +65,25 @@ app.get("/api/schemes/:id", (req, res) => {
 
 // ---------- Complaints (mock) ----------
 app.post("/api/complaints", (req, res) => {
-  const { category, description, location, name } = req.body;
+  const { category, description, location, name } = req.body || {};
+
+  if (!isNonEmptyString(description, 1000)) {
+    return res.status(400).json({ error: "A valid description is required." });
+  }
+  if (!isNonEmptyString(location, 200)) {
+    return res.status(400).json({ error: "A valid location is required." });
+  }
+
   const id = `CIV${complaintCounter++}`;
   const complaint = {
     id,
-    category: category || "General",
-    description: description || "",
-    location: location || "",
-    name: name || "Anonymous",
+    category: sanitize(category) || "General",
+    description: sanitize(description),
+    location: sanitize(location),
+    name: sanitize(name) || "Anonymous",
     status: "Registered",
     createdAt: new Date().toISOString(),
-    timeline: [
-      { status: "Registered", date: new Date().toISOString() },
-    ],
+    timeline: [{ status: "Registered", date: new Date().toISOString() }],
   };
   complaints.push(complaint);
   res.json(complaint);
@@ -57,7 +97,6 @@ app.get("/api/complaints/:id", (req, res) => {
   const complaint = complaints.find((c) => c.id === req.params.id);
   if (!complaint) return res.status(404).json({ error: "Complaint not found" });
 
-  // Mock progressive status based on time elapsed (for demo purposes)
   const minutesElapsed = (Date.now() - new Date(complaint.createdAt)) / 60000;
   if (minutesElapsed > 2 && complaint.status === "Registered") {
     complaint.status = "In Progress";
@@ -71,11 +110,19 @@ app.get("/api/complaints/:id", (req, res) => {
 });
 
 // ---------- AI Chatbot ----------
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", chatLimiter, async (req, res) => {
   try {
-    const { message, language } = req.body;
-    if (!message) return res.status(400).json({ error: "Message required" });
+    const { message, language } = req.body || {};
 
+    if (!isNonEmptyString(message, 500)) {
+      return res.status(400).json({ error: "A valid message (max 500 characters) is required." });
+    }
+
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({ error: "Server misconfiguration: missing API key." });
+    }
+
+    const safeMessage = sanitize(message);
     const langInstruction =
       language === "hi"
         ? "Reply in simple Hindi (Devanagari script)."
@@ -95,7 +142,7 @@ If asked something unrelated to civic/government services, politely redirect to 
         contents: [
           {
             role: "user",
-            parts: [{ text: `${systemContext}\n\nUser question: ${message}` }],
+            parts: [{ text: `${systemContext}\n\nUser question: ${safeMessage}` }],
           },
         ],
       }),
@@ -104,7 +151,7 @@ If asked something unrelated to civic/government services, politely redirect to 
     const data = await response.json();
 
     if (data.error) {
-      return res.status(500).json({ error: data.error.message || "Gemini API error" });
+      return res.status(502).json({ error: "AI service temporarily unavailable. Please try again." });
     }
 
     const reply =
@@ -113,8 +160,7 @@ If asked something unrelated to civic/government services, politely redirect to 
 
     res.json({ reply });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error while contacting AI" });
+    res.status(500).json({ error: "Server error while contacting AI." });
   }
 });
 
@@ -122,6 +168,10 @@ app.get("/", (req, res) => {
   res.send("Smart Bharat backend is running.");
 });
 
-app.listen(PORT, () => {
-  console.log(`Smart Bharat backend running on port ${PORT}`);
+// Generic error handler (avoids leaking stack traces)
+app.use((err, req, res, next) => {
+  res.status(500).json({ error: "Something went wrong." });
 });
+
+export { PORT };
+export default app;

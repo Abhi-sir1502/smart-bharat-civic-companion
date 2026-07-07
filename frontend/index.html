@@ -10,33 +10,37 @@
   .tab-active { background: #0f766e; color: white; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-thumb { background: #0f766e; border-radius: 4px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .tab-btn:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid #0f766e; outline-offset: 2px;
+  }
 </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
   <!-- CONFIG: point to your backend URL -->
   <script>
-    const API_BASE = "https://smart-bharat-civic-companion-o3u5.onrender.com"; // change to your deployed backend URL
+    const API_BASE = "https://smart-bharat-civic-companion-o3u5.onrender.com";
     let currentLang = "en";
   </script>
 
   <!-- Header -->
   <header class="bg-teal-700 text-white px-4 py-4 flex items-center justify-between shadow">
     <div class="flex items-center gap-2">
-      <span class="text-2xl">🇮🇳</span>
+      <span class="text-2xl" aria-hidden="true">🇮🇳</span>
       <div>
         <h1 class="font-bold text-lg leading-tight">Smart Bharat</h1>
         <p class="text-xs text-teal-100">AI-Powered Civic Companion</p>
       </div>
     </div>
-    <button id="langToggle" class="bg-teal-800 hover:bg-teal-900 px-3 py-1.5 rounded-full text-sm font-medium">
+    <button id="langToggle" aria-label="Toggle language between English and Hindi" class="bg-teal-800 hover:bg-teal-900 px-3 py-1.5 rounded-full text-sm font-medium">
       🌐 English
     </button>
   </header>
 
   <!-- Tabs -->
-  <nav class="flex overflow-x-auto bg-white border-b sticky top-0 z-10 shadow-sm">
-    <button class="tab-btn tab-active px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="chat">💬 AI Chat</button>
+  <nav aria-label="Main sections" class="flex overflow-x-auto bg-white border-b sticky top-0 z-10 shadow-sm">
+    <button class="tab-btn tab-active px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="chat" aria-current="true">💬 AI Chat</button>
     <button class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="schemes">📄 Schemes</button>
     <button class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="complaint">🛣️ Report Issue</button>
     <button class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="track">📍 Track Complaint</button>
@@ -45,31 +49,37 @@
   <main class="max-w-2xl mx-auto p-4">
 
     <!-- CHAT TAB -->
-    <section id="chat" class="tab-section">
-      <div id="chatWindow" class="bg-white rounded-xl shadow p-4 h-96 overflow-y-auto flex flex-col gap-3 mb-3">
+    <section id="chat" class="tab-section" aria-labelledby="chatHeading">
+      <h2 id="chatHeading" class="sr-only">AI Chat Assistant</h2>
+      <div id="chatWindow" role="log" aria-live="polite" aria-label="Chat conversation" class="bg-white rounded-xl shadow p-4 h-96 overflow-y-auto flex flex-col gap-3 mb-3">
         <div class="bg-teal-50 text-teal-900 rounded-lg p-3 text-sm self-start max-w-[85%]">
           👋 Namaste! I'm your Smart Bharat AI Sahayak. Ask me about government schemes, documents, or how to report a civic issue.
         </div>
       </div>
-      <div class="flex gap-2">
+      <form id="chatForm" class="flex gap-2">
+        <label for="chatInput" class="sr-only">Type your question</label>
         <input id="chatInput" type="text" placeholder="Type your question... e.g. PM Awas Yojana ke liye documents?"
+          aria-label="Type your question"
           class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
-        <button id="sendBtn" class="bg-teal-700 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-teal-800">Send</button>
-      </div>
+        <button id="sendBtn" type="submit" aria-label="Send message" class="bg-teal-700 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-teal-800">Send</button>
+      </form>
     </section>
 
     <!-- SCHEMES TAB -->
-    <section id="schemes" class="tab-section hidden">
-      <h2 class="font-semibold text-lg mb-3 text-gray-800">Government Schemes</h2>
-      <div id="schemesList" class="grid gap-3"></div>
+    <section id="schemes" class="tab-section hidden" aria-labelledby="schemesHeading">
+      <h2 id="schemesHeading" class="font-semibold text-lg mb-3 text-gray-800">Government Schemes</h2>
+      <div id="schemesList" class="grid gap-3" aria-live="polite"></div>
     </section>
 
     <!-- COMPLAINT TAB -->
-    <section id="complaint" class="tab-section hidden">
-      <h2 class="font-semibold text-lg mb-3 text-gray-800">Report a Civic Issue</h2>
+    <section id="complaint" class="tab-section hidden" aria-labelledby="complaintHeading">
+      <h2 id="complaintHeading" class="font-semibold text-lg mb-3 text-gray-800">Report a Civic Issue</h2>
       <form id="complaintForm" class="bg-white rounded-xl shadow p-4 flex flex-col gap-3">
-        <input name="name" placeholder="Your Name" class="border rounded-lg px-3 py-2 text-sm" required />
-        <select name="category" class="border rounded-lg px-3 py-2 text-sm" required>
+        <label for="complaintName" class="sr-only">Your Name</label>
+        <input id="complaintName" name="name" placeholder="Your Name" aria-label="Your Name" class="border rounded-lg px-3 py-2 text-sm" required />
+
+        <label for="complaintCategory" class="sr-only">Issue Category</label>
+        <select id="complaintCategory" name="category" aria-label="Issue Category" class="border rounded-lg px-3 py-2 text-sm" required>
           <option value="">Select Issue Category</option>
           <option>Road Damage</option>
           <option>Streetlight Not Working</option>
@@ -77,21 +87,27 @@
           <option>Water Supply</option>
           <option>Other</option>
         </select>
-        <input name="location" placeholder="Location / Area" class="border rounded-lg px-3 py-2 text-sm" required />
-        <textarea name="description" placeholder="Describe the issue..." rows="3" class="border rounded-lg px-3 py-2 text-sm" required></textarea>
+
+        <label for="complaintLocation" class="sr-only">Location / Area</label>
+        <input id="complaintLocation" name="location" placeholder="Location / Area" aria-label="Location or Area" class="border rounded-lg px-3 py-2 text-sm" required />
+
+        <label for="complaintDescription" class="sr-only">Describe the issue</label>
+        <textarea id="complaintDescription" name="description" placeholder="Describe the issue..." aria-label="Describe the issue" rows="3" class="border rounded-lg px-3 py-2 text-sm" required></textarea>
+
         <button type="submit" class="bg-teal-700 text-white rounded-lg py-2 text-sm font-medium hover:bg-teal-800">Submit Complaint</button>
       </form>
-      <div id="complaintResult" class="mt-3"></div>
+      <div id="complaintResult" class="mt-3" aria-live="polite"></div>
     </section>
 
     <!-- TRACK TAB -->
-    <section id="track" class="tab-section hidden">
-      <h2 class="font-semibold text-lg mb-3 text-gray-800">Track Complaint Status</h2>
-      <div class="flex gap-2 mb-4">
-        <input id="trackInput" placeholder="Enter Complaint ID e.g. CIV1000" class="flex-1 border rounded-lg px-3 py-2 text-sm" />
-        <button id="trackBtn" class="bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-800">Track</button>
-      </div>
-      <div id="trackResult"></div>
+    <section id="track" class="tab-section hidden" aria-labelledby="trackHeading">
+      <h2 id="trackHeading" class="font-semibold text-lg mb-3 text-gray-800">Track Complaint Status</h2>
+      <form id="trackForm" class="flex gap-2 mb-4">
+        <label for="trackInput" class="sr-only">Complaint ID</label>
+        <input id="trackInput" placeholder="Enter Complaint ID e.g. CIV1000" aria-label="Complaint ID" class="flex-1 border rounded-lg px-3 py-2 text-sm" />
+        <button id="trackBtn" type="submit" aria-label="Track complaint status" class="bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-800">Track</button>
+      </form>
+      <div id="trackResult" aria-live="polite"></div>
     </section>
 
   </main>
@@ -100,8 +116,12 @@
   // ---------- Tab switching ----------
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("tab-active"));
+      document.querySelectorAll(".tab-btn").forEach(b => {
+        b.classList.remove("tab-active");
+        b.removeAttribute("aria-current");
+      });
       btn.classList.add("tab-active");
+      btn.setAttribute("aria-current", "true");
       document.querySelectorAll(".tab-section").forEach(s => s.classList.add("hidden"));
       document.getElementById(btn.dataset.tab).classList.remove("hidden");
       if (btn.dataset.tab === "schemes") loadSchemes();
@@ -118,6 +138,7 @@
   // ---------- Chat ----------
   const chatWindow = document.getElementById("chatWindow");
   const chatInput = document.getElementById("chatInput");
+  const chatForm = document.getElementById("chatForm");
 
   function addBubble(text, isUser) {
     const div = document.createElement("div");
@@ -151,8 +172,10 @@
     }
   }
 
-  document.getElementById("sendBtn").addEventListener("click", sendMessage);
-  chatInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
 
   // ---------- Schemes ----------
   async function loadSchemes() {
@@ -169,7 +192,7 @@
           <details class="text-sm">
             <summary class="cursor-pointer text-teal-700 font-medium">📄 Required Documents</summary>
             <ul class="list-disc ml-5 mt-1 text-gray-600">
-              ${s.documents.map(d => `<li>${d}</li>`).join("")}
+              ${s.documents.map(d => <li>${d}</li>).join("")}
             </ul>
           </details>
         </div>
@@ -193,6 +216,10 @@
         body: JSON.stringify(payload),
       });
       const data = await res.json();
+      if (!res.ok) {
+        resultDiv.innerHTML = <div class="text-red-600 text-sm">⚠️ ${data.error || "Could not submit."}</div>;
+        return;
+      }
       resultDiv.innerHTML = `
         <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
           ✅ Complaint registered! Your ID: <strong>${data.id}</strong><br/>
@@ -200,12 +227,13 @@
         </div>`;
       form.reset();
     } catch (err) {
-      resultDiv.innerHTML = `<div class="text-red-600 text-sm">⚠️ Could not submit. Check backend connection.</div>`;
+      resultDiv.innerHTML = <div class="text-red-600 text-sm">⚠️ Could not submit. Check backend connection.</div>;
     }
   });
 
   // ---------- Track complaint ----------
-  document.getElementById("trackBtn").addEventListener("click", async () => {
+  document.getElementById("trackForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
     const id = document.getElementById("trackInput").value.trim();
     const resultDiv = document.getElementById("trackResult");
     if (!id) return;
@@ -230,7 +258,7 @@
           </div>
         </div>`;
     } catch (err) {
-      resultDiv.innerHTML = `<div class="text-red-600 text-sm">⚠️ Complaint ID not found.</div>`;
+      resultDiv.innerHTML = <div class="text-red-600 text-sm">⚠️ Complaint ID not found.</div>;
     }
   });
 </script>
