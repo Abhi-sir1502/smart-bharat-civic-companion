@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Bharat – AI Civic Companion</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .tab-active { background: #0f766e; color: white; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-thumb { background: #0f766e; border-radius: 4px; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- CONFIG: point to your backend URL -->
+  <script>
+    const API_BASE = "http://localhost:5000"; // change to your deployed backend URL
+    let currentLang = "en";
+  </script>
+
+  <!-- Header -->
+  <header class="bg-teal-700 text-white px-4 py-4 flex items-center justify-between shadow">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🇮🇳</span>
+      <div>
+        <h1 class="font-bold text-lg leading-tight">Smart Bharat</h1>
+        <p class="text-xs text-teal-100">AI-Powered Civic Companion</p>
+      </div>
+    </div>
+    <button id="langToggle" class="bg-teal-800 hover:bg-teal-900 px-3 py-1.5 rounded-full text-sm font-medium">
+      🌐 English
+    </button>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="flex overflow-x-auto bg-white border-b sticky top-0 z-10 shadow-sm">
+    <button class="tab-btn tab-active px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="chat">💬 AI Chat</button>
+    <button class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="schemes">📄 Schemes</button>
+    <button class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="complaint">🛣️ Report Issue</button>
+    <button class="tab-btn px-4 py-3 text-sm font-medium whitespace-nowrap" data-tab="track">📍 Track Complaint</button>
+  </nav>
+
+  <main class="max-w-2xl mx-auto p-4">
+
+    <!-- CHAT TAB -->
+    <section id="chat" class="tab-section">
+      <div id="chatWindow" class="bg-white rounded-xl shadow p-4 h-96 overflow-y-auto flex flex-col gap-3 mb-3">
+        <div class="bg-teal-50 text-teal-900 rounded-lg p-3 text-sm self-start max-w-[85%]">
+          👋 Namaste! I'm your Smart Bharat AI Sahayak. Ask me about government schemes, documents, or how to report a civic issue.
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <input id="chatInput" type="text" placeholder="Type your question... e.g. PM Awas Yojana ke liye documents?"
+          class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600" />
+        <button id="sendBtn" class="bg-teal-700 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-teal-800">Send</button>
+      </div>
+    </section>
+
+    <!-- SCHEMES TAB -->
+    <section id="schemes" class="tab-section hidden">
+      <h2 class="font-semibold text-lg mb-3 text-gray-800">Government Schemes</h2>
+      <div id="schemesList" class="grid gap-3"></div>
+    </section>
+
+    <!-- COMPLAINT TAB -->
+    <section id="complaint" class="tab-section hidden">
+      <h2 class="font-semibold text-lg mb-3 text-gray-800">Report a Civic Issue</h2>
+      <form id="complaintForm" class="bg-white rounded-xl shadow p-4 flex flex-col gap-3">
+        <input name="name" placeholder="Your Name" class="border rounded-lg px-3 py-2 text-sm" required />
+        <select name="category" class="border rounded-lg px-3 py-2 text-sm" required>
+          <option value="">Select Issue Category</option>
+          <option>Road Damage</option>
+          <option>Streetlight Not Working</option>
+          <option>Garbage Collection</option>
+          <option>Water Supply</option>
+          <option>Other</option>
+        </select>
+        <input name="location" placeholder="Location / Area" class="border rounded-lg px-3 py-2 text-sm" required />
+        <textarea name="description" placeholder="Describe the issue..." rows="3" class="border rounded-lg px-3 py-2 text-sm" required></textarea>
+        <button type="submit" class="bg-teal-700 text-white rounded-lg py-2 text-sm font-medium hover:bg-teal-800">Submit Complaint</button>
+      </form>
+      <div id="complaintResult" class="mt-3"></div>
+    </section>
+
+    <!-- TRACK TAB -->
+    <section id="track" class="tab-section hidden">
+      <h2 class="font-semibold text-lg mb-3 text-gray-800">Track Complaint Status</h2>
+      <div class="flex gap-2 mb-4">
+        <input id="trackInput" placeholder="Enter Complaint ID e.g. CIV1000" class="flex-1 border rounded-lg px-3 py-2 text-sm" />
+        <button id="trackBtn" class="bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-800">Track</button>
+      </div>
+      <div id="trackResult"></div>
+    </section>
+
+  </main>
+
+<script>
+  // ---------- Tab switching ----------
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("tab-active"));
+      btn.classList.add("tab-active");
+      document.querySelectorAll(".tab-section").forEach(s => s.classList.add("hidden"));
+      document.getElementById(btn.dataset.tab).classList.remove("hidden");
+      if (btn.dataset.tab === "schemes") loadSchemes();
+    });
+  });
+
+  // ---------- Language toggle ----------
+  document.getElementById("langToggle").addEventListener("click", () => {
+    currentLang = currentLang === "en" ? "hi" : "en";
+    document.getElementById("langToggle").textContent = currentLang === "en" ? "🌐 English" : "🌐 हिंदी";
+    if (!document.getElementById("schemes").classList.contains("hidden")) loadSchemes();
+  });
+
+  // ---------- Chat ----------
+  const chatWindow = document.getElementById("chatWindow");
+  const chatInput = document.getElementById("chatInput");
+
+  function addBubble(text, isUser) {
+    const div = document.createElement("div");
+    div.className = isUser
+      ? "bg-teal-700 text-white rounded-lg p-3 text-sm self-end max-w-[85%]"
+      : "bg-teal-50 text-teal-900 rounded-lg p-3 text-sm self-start max-w-[85%]";
+    div.textContent = text;
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+    addBubble(msg, true);
+    chatInput.value = "";
+    addBubble("Typing...", false);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, language: currentLang }),
+      });
+      const data = await res.json();
+      chatWindow.removeChild(chatWindow.lastChild);
+      addBubble(data.reply || data.error || "Something went wrong.", false);
+    } catch (err) {
+      chatWindow.removeChild(chatWindow.lastChild);
+      addBubble("⚠️ Could not reach server. Check backend URL/connection.", false);
+    }
+  }
+
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+  chatInput.addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+
+  // ---------- Schemes ----------
+  async function loadSchemes() {
+    const list = document.getElementById("schemesList");
+    list.innerHTML = "Loading...";
+    try {
+      const res = await fetch(`${API_BASE}/api/schemes`);
+      const schemes = await res.json();
+      list.innerHTML = schemes.map(s => `
+        <div class="bg-white rounded-xl shadow p-4">
+          <h3 class="font-semibold text-teal-800">${currentLang === "hi" ? s.nameHi : s.name}</h3>
+          <p class="text-xs text-gray-500 mb-1">${s.category}</p>
+          <p class="text-sm text-gray-700 mb-2">${currentLang === "hi" ? s.descriptionHi : s.description}</p>
+          <details class="text-sm">
+            <summary class="cursor-pointer text-teal-700 font-medium">📄 Required Documents</summary>
+            <ul class="list-disc ml-5 mt-1 text-gray-600">
+              ${s.documents.map(d => `<li>${d}</li>`).join("")}
+            </ul>
+          </details>
+        </div>
+      `).join("");
+    } catch (err) {
+      list.innerHTML = "⚠️ Could not load schemes. Check backend connection.";
+    }
+  }
+
+  // ---------- Complaint submit ----------
+  document.getElementById("complaintForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const payload = Object.fromEntries(new FormData(form).entries());
+    const resultDiv = document.getElementById("complaintResult");
+    resultDiv.innerHTML = "Submitting...";
+    try {
+      const res = await fetch(`${API_BASE}/api/complaints`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      resultDiv.innerHTML = `
+        <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+          ✅ Complaint registered! Your ID: <strong>${data.id}</strong><br/>
+          Save this ID to track status later.
+        </div>`;
+      form.reset();
+    } catch (err) {
+      resultDiv.innerHTML = `<div class="text-red-600 text-sm">⚠️ Could not submit. Check backend connection.</div>`;
+    }
+  });
+
+  // ---------- Track complaint ----------
+  document.getElementById("trackBtn").addEventListener("click", async () => {
+    const id = document.getElementById("trackInput").value.trim();
+    const resultDiv = document.getElementById("trackResult");
+    if (!id) return;
+    resultDiv.innerHTML = "Searching...";
+    try {
+      const res = await fetch(`${API_BASE}/api/complaints/${id}`);
+      if (!res.ok) throw new Error("not found");
+      const data = await res.json();
+      resultDiv.innerHTML = `
+        <div class="bg-white rounded-xl shadow p-4">
+          <p class="text-sm"><strong>ID:</strong> ${data.id}</p>
+          <p class="text-sm"><strong>Category:</strong> ${data.category}</p>
+          <p class="text-sm"><strong>Location:</strong> ${data.location}</p>
+          <p class="text-sm mb-2"><strong>Status:</strong>
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+              ${data.status === "Resolved" ? "bg-green-100 text-green-700" :
+                data.status === "In Progress" ? "bg-yellow-100 text-yellow-700" :
+                "bg-gray-100 text-gray-700"}">${data.status}</span>
+          </p>
+          <div class="text-xs text-gray-500">
+            ${data.timeline.map(t => `${t.status} — ${new Date(t.date).toLocaleString()}`).join("<br/>")}
+          </div>
+        </div>`;
+    } catch (err) {
+      resultDiv.innerHTML = `<div class="text-red-600 text-sm">⚠️ Complaint ID not found.</div>`;
+    }
+  });
+</script>
+</body>
+</html>
